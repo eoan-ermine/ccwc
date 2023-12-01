@@ -9,7 +9,7 @@ using namespace std::literals;
 
 constexpr auto forEachCharacter = []<typename... F>(std::istream &stream, F... fun) {
     return []<auto... Idx>(std::istream &stream, std::index_sequence<Idx...>, F... fun) {
-        constexpr auto BUFFER_SIZE = 16*1024;
+        constexpr auto BUFFER_SIZE = 16 * 1024;
         std::array<char, BUFFER_SIZE> buffer;
         std::array<uintmax_t, sizeof...(F)> accumulators;
         while (size_t nBytes = (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
@@ -26,7 +26,7 @@ constexpr auto bytesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
 };
 
 constexpr auto linesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
-    for(char *p = buffer.data(); (p = (char*) memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
+    for (char *p = buffer.data(); (p = (char *) memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
         ++accumulator;
 };
 
@@ -61,14 +61,14 @@ constexpr auto multibyteCount = [](auto &accumulator, auto &buffer, auto nBytes)
     }
 };
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
     std::istream *stream = &std::cin;
     std::ifstream file;
 
     if ((argc == 2 && argv[1][0] == '-') || argc == 3) {
-        const char* filename = (argc == 3 ? argv[2] : "stdin");
+        const char *filename = (argc == 3 ? argv[2] : "stdin");
         if (argc == 3)
-            stream = &(file = std::ifstream {argv[2]});
+            stream = &(file = std::ifstream{argv[2]});
 
         uintmax_t accumulator = 0;
         if (argv[1] == "-c"sv) {
@@ -93,9 +93,9 @@ int main(int argc, char* argv[]) {
             std::cout << accumulator << ' ' << filename << '\n';
         }
     } else if (argc <= 2) {
-        const char* filename = (argc == 2 ? argv[1] : "stdin");
+        const char *filename = (argc == 2 ? argv[1] : "stdin");
         if (argc == 2)
-            stream = &(file = std::ifstream {argv[1]});
+            stream = &(file = std::ifstream{argv[1]});
 
         auto [bytes, lines, words] = forEachCharacter(*stream, bytesCount, linesCount, wordsCount);
         if (filename == "stdin"sv) {

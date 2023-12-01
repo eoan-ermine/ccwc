@@ -10,11 +10,9 @@ using namespace std::literals;
 namespace fs = std::filesystem;
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
+    if (argc == 1) {
         return -1;
     }
-
-    const char* filename = argv[2];
 
     auto forEachCharacter = [](const char* filename, auto F) {
         constexpr auto BUFFER_SIZE = 16*1024;
@@ -71,23 +69,34 @@ int main(int argc, char* argv[]) {
     };
 
 
-    uintmax_t accumulator;
-    if (argv[1] == "-c"sv) {
-        accumulator = bytesCount(filename);
-    } else if (argv[1] == "-l"sv) {
-        accumulator = forEachCharacter(filename, linesCount);
-    } else if (argv[1] == "-w"sv) {
-        accumulator = forEachCharacter(filename, wordsCount);
-    } else if (argv[1] == "-m"sv) {
-        std::setlocale(LC_ALL, "");
-        std::mblen(nullptr, 0); // reset the conversion state
+    if (argc == 2) {
+        const char* filename = argv[1];
 
-        if (MB_CUR_MAX > 1)
-            accumulator = forEachCharacter(filename, multibyteCount);
-        else
+        auto bytes = bytesCount(filename);
+        auto lines = forEachCharacter(filename, linesCount);
+        auto words = forEachCharacter(filename, wordsCount);
+        fmt::println("{}\t{}\t{} {}", words, lines, bytes, filename);
+    } else if (argc == 3) {
+        const char* filename = argv[2];
+
+        uintmax_t accumulator;
+        if (argv[1] == "-c"sv) {
             accumulator = bytesCount(filename);
+        } else if (argv[1] == "-l"sv) {
+            accumulator = forEachCharacter(filename, linesCount);
+        } else if (argv[1] == "-w"sv) {
+            accumulator = forEachCharacter(filename, wordsCount);
+        } else if (argv[1] == "-m"sv) {
+            std::setlocale(LC_ALL, "");
+            std::mblen(nullptr, 0); // reset the conversion state
+
+            if (MB_CUR_MAX > 1)
+                accumulator = forEachCharacter(filename, multibyteCount);
+            else
+                accumulator = bytesCount(filename);
+        }
+        fmt::println("{} {}", accumulator, filename);
     }
-    fmt::println("{} {}", accumulator, filename);
 
     return 0;
 }

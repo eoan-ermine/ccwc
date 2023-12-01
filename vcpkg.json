@@ -1,0 +1,10 @@
+{
+  "name" : "ccwc",
+  "version-string" : "1.0.0",
+  "builtin-baseline" : "16ee2ecb31788c336ace8bb14c21801efb6836e4",
+  "dependencies" : [ {
+    "name" : "fmt",
+    "version>=" : "10.1.1",
+    "$comment" : "    find_package(fmt CONFIG REQUIRED)\n\n    target_link_libraries(main PRIVATE fmt::fmt)\n"
+  } ]
+}

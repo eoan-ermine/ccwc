@@ -10,17 +10,16 @@ using namespace std::literals;
 namespace fs = std::filesystem;
 
 int main(int argc, char* argv[]) {
-    if (argc == 1) {
-        return -1;
-    }
-
-    auto forEachCharacter = [](const char* filename, auto F) {
+    auto resetStream = [](std::istream &stream) {
+        stream.clear();                 // clear fail and eof bits
+        stream.seekg(0, std::ios::beg); // back to the start!
+    };
+    auto forEachCharacter = [](std::istream &stream, auto F) {
         constexpr auto BUFFER_SIZE = 16*1024;
         std::array<char, BUFFER_SIZE> buffer;
-        std::ifstream file{filename};
 
         uintmax_t accumulator = 0;
-        while (size_t nBytes = (file.read(buffer.data(), BUFFER_SIZE), file.gcount())) {
+        while (size_t nBytes = (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
             if (nBytes == 0) break;
 
             F(accumulator, buffer, nBytes);
@@ -28,9 +27,8 @@ int main(int argc, char* argv[]) {
 
         return accumulator;
     };
-    auto bytesCount = [](const char* filename) -> uintmax_t  {
-        fs::path absolutePath = fs::current_path() / filename;
-        return fs::file_size(absolutePath);
+    auto bytesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
+        accumulator += nBytes;
     };
     auto linesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
         for(char *p = buffer.data(); (p = (char*) memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
@@ -67,34 +65,55 @@ int main(int argc, char* argv[]) {
         }
     };
 
+    if ((argc == 2 && argv[1][0] == '-') || argc == 3) {
+        const char* filename = (argc == 3 ? argv[2] : "stdin");
+        std::istream *stream = &std::cin;
+        std::ifstream file;
+        if (argc == 3) {
+            file = std::ifstream{argv[2]};
+            stream = &file;
+        }
 
-    if (argc == 2) {
-        const char* filename = argv[1];
-
-        auto bytes = bytesCount(filename);
-        auto lines = forEachCharacter(filename, linesCount);
-        auto words = forEachCharacter(filename, wordsCount);
-        fmt::println("{}\t{}\t{} {}", words, lines, bytes, filename);
-    } else if (argc == 3) {
-        const char* filename = argv[2];
-
-        uintmax_t accumulator;
+        uintmax_t accumulator = 0;
         if (argv[1] == "-c"sv) {
-            accumulator = bytesCount(filename);
+            accumulator = forEachCharacter(*stream, bytesCount);
         } else if (argv[1] == "-l"sv) {
-            accumulator = forEachCharacter(filename, linesCount);
+            accumulator = forEachCharacter(*stream, linesCount);
         } else if (argv[1] == "-w"sv) {
-            accumulator = forEachCharacter(filename, wordsCount);
+            accumulator = forEachCharacter(*stream, wordsCount);
         } else if (argv[1] == "-m"sv) {
             std::setlocale(LC_ALL, "");
             std::mblen(nullptr, 0); // reset the conversion state
 
             if (MB_CUR_MAX > 1)
-                accumulator = forEachCharacter(filename, multibyteCount);
+                accumulator = forEachCharacter(*stream, multibyteCount);
             else
-                accumulator = bytesCount(filename);
+                accumulator = forEachCharacter(*stream, bytesCount);
         }
-        fmt::println("{} {}", accumulator, filename);
+
+        if (filename == "stdin"sv) {
+            fmt::println("{}", accumulator);
+        } else {
+            fmt::println("{} {}", accumulator, filename);
+        }
+    } else if (argc <= 2) {
+        const char* filename = (argc == 2 ? argv[1] : "stdin");
+        std::istream *stream = &std::cin;
+        std::ifstream file;
+        if (argc == 2) {
+            file = std::ifstream{argv[1]};
+            stream = &file;
+        }
+
+        auto bytes = forEachCharacter(*stream, bytesCount);
+        auto lines = (resetStream(*stream), forEachCharacter(*stream, linesCount));
+        auto words = (resetStream(*stream), forEachCharacter(*stream, wordsCount));
+
+        if (filename == "stdin"sv) {
+            fmt::println("{} {} {}", lines, words, bytes);
+        } else {
+            fmt::println("{} {} {} {}", lines, words, bytes, filename);
+        }
     }
 
     return 0;

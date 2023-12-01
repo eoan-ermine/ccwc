@@ -5,7 +5,6 @@
 #include <array>
 #include <cstring>
 #include <fmt/format.h>
-#include <expected>
 
 using namespace std::literals;
 namespace fs = std::filesystem;
@@ -31,15 +30,9 @@ int main(int argc, char* argv[]) {
 
         return accumulator;
     };
-
-    auto bytesCount = [](const char* filename) -> std::expected<long int, std::error_code> {
+    auto bytesCount = [](const char* filename) -> uintmax_t  {
         fs::path absolutePath = fs::current_path() / filename;
-        std::error_code ec;
-        if (const auto size = fs::file_size(absolutePath, ec); ec) {
-            return std::unexpected(ec);
-        } else {
-            return size;
-        }
+        return fs::file_size(absolutePath);
     };
     auto linesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
         for(char *p = buffer.data(); (p = (char*) memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
@@ -68,7 +61,7 @@ int main(int argc, char* argv[]) {
             }
         }
     };
-    auto multibytesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
+    auto multibyteCount = [](auto &accumulator, auto &buffer, auto nBytes) {
         for (auto it = buffer.data(), endIt = it + nBytes; it != endIt; ++accumulator) {
             const int next = std::mblen(it, endIt - it);
             if (next == -1)
@@ -78,36 +71,23 @@ int main(int argc, char* argv[]) {
     };
 
 
+    uintmax_t accumulator;
     if (argv[1] == "-c"sv) {
-        auto res = bytesCount(filename);
-        if (res.has_value()) {
-            fmt::println("{} {}", filename, res.value());
-        } else {
-            fmt::println("{}: {}", filename, res.error().message());
-        }
+        accumulator = bytesCount(filename);
     } else if (argv[1] == "-l"sv) {
-        auto accumulator = forEachCharacter(filename, linesCount);
-        fmt::println("{} {}", accumulator, filename);
+        accumulator = forEachCharacter(filename, linesCount);
     } else if (argv[1] == "-w"sv) {
-        auto accumulator = forEachCharacter(filename, wordsCount);
-        fmt::println("{} {}", accumulator, filename);
+        accumulator = forEachCharacter(filename, wordsCount);
     } else if (argv[1] == "-m"sv) {
         std::setlocale(LC_ALL, "");
         std::mblen(nullptr, 0); // reset the conversion state
 
-        uintmax_t accumulator;
-        if (MB_CUR_MAX > 1) {
-            accumulator = forEachCharacter(filename, multibytesCount);
-            fmt::println("{} {}", accumulator, filename);
-        } else {
-            auto res = bytesCount(filename);
-            if (res.has_value()) {
-                fmt::println("{} {}", filename, res.value());
-            } else {
-                fmt::println("{}: {}", filename, res.error().message());
-            }
-        }
+        if (MB_CUR_MAX > 1)
+            accumulator = forEachCharacter(filename, multibyteCount);
+        else
+            accumulator = bytesCount(filename);
     }
+    fmt::println("{} {}", accumulator, filename);
 
     return 0;
 }

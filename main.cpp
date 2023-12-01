@@ -1,19 +1,14 @@
 #include <iostream>
 #include <string_view>
 #include <fstream>
-#include <filesystem>
 #include <array>
 #include <cstring>
 #include <fmt/format.h>
+#include <vector>
 
 using namespace std::literals;
-namespace fs = std::filesystem;
 
 int main(int argc, char* argv[]) {
-    auto resetStream = [](std::istream &stream) {
-        stream.clear();                 // clear fail and eof bits
-        stream.seekg(0, std::ios::beg); // back to the start!
-    };
     auto forEachCharacter = [](std::istream &stream, auto F) {
         constexpr auto BUFFER_SIZE = 16*1024;
         std::array<char, BUFFER_SIZE> buffer;
@@ -21,12 +16,27 @@ int main(int argc, char* argv[]) {
         uintmax_t accumulator = 0;
         while (size_t nBytes = (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
             if (nBytes == 0) break;
-
             F(accumulator, buffer, nBytes);
         }
 
         return accumulator;
     };
+
+    auto forEachCharacterCompose = []<typename... F>(std::istream &stream, F... fun) {
+        return []<auto... Idx>(std::istream &stream, std::index_sequence<Idx...>, F... fun) {
+            constexpr auto BUFFER_SIZE = 16*1024;
+            std::array<char, BUFFER_SIZE> buffer;
+
+            std::vector<uintmax_t> accumulators(sizeof...(F));
+            while (size_t nBytes = (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
+                if (nBytes == 0) break;
+                (fun(accumulators[Idx], buffer, nBytes), ...);
+            }
+
+            return accumulators;
+        }(stream, std::make_index_sequence<sizeof...(F)>(), fun...);
+    };
+
     auto bytesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
         accumulator += nBytes;
     };
@@ -105,9 +115,8 @@ int main(int argc, char* argv[]) {
             stream = &file;
         }
 
-        auto bytes = forEachCharacter(*stream, bytesCount);
-        auto lines = (resetStream(*stream), forEachCharacter(*stream, linesCount));
-        auto words = (resetStream(*stream), forEachCharacter(*stream, wordsCount));
+        auto accumulators = forEachCharacterCompose(*stream, bytesCount, linesCount, wordsCount);
+        auto bytes = accumulators[0], lines = accumulators[1], words = accumulators[2];
 
         if (filename == "stdin"sv) {
             fmt::println("{} {} {}", lines, words, bytes);

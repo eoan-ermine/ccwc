@@ -3,7 +3,7 @@
 #include <fstream>
 #include <array>
 #include <cstring>
-#include <fmt/format.h>
+#include <cstdint>
 #include <vector>
 
 using namespace std::literals;
@@ -101,9 +101,9 @@ int main(int argc, char* argv[]) {
         }
 
         if (filename == "stdin"sv) {
-            fmt::println("{}", accumulator);
+            std::cout << accumulator << '\n';
         } else {
-            fmt::println("{} {}", accumulator, filename);
+            std::cout << accumulator << ' ' << filename << '\n';
         }
     } else if (argc <= 2) {
         const char* filename = (argc == 2 ? argv[1] : "stdin");
@@ -114,9 +114,9 @@ int main(int argc, char* argv[]) {
         auto bytes = accumulators[0], lines = accumulators[1], words = accumulators[2];
 
         if (filename == "stdin"sv) {
-            fmt::println("{} {} {}", lines, words, bytes);
+            std::cout << lines << ' ' << words << ' ' << bytes << '\n';
         } else {
-            fmt::println("{} {} {} {}", lines, words, bytes, filename);
+            std::cout << lines << ' ' << words << ' ' << bytes << ' ' << filename << '\n';
         }
     }
 

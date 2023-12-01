@@ -75,14 +75,13 @@ constexpr auto multibyteCount = [](auto &accumulator, auto &buffer, auto nBytes)
 };
 
 int main(int argc, char* argv[]) {
+    std::istream *stream = &std::cin;
+    std::ifstream file;
+
     if ((argc == 2 && argv[1][0] == '-') || argc == 3) {
         const char* filename = (argc == 3 ? argv[2] : "stdin");
-        std::istream *stream = &std::cin;
-        std::ifstream file;
-        if (argc == 3) {
-            file = std::ifstream{argv[2]};
-            stream = &file;
-        }
+        if (argc == 3)
+            stream = &(file = std::ifstream {argv[2]});
 
         uintmax_t accumulator = 0;
         if (argv[1] == "-c"sv) {
@@ -108,12 +107,8 @@ int main(int argc, char* argv[]) {
         }
     } else if (argc <= 2) {
         const char* filename = (argc == 2 ? argv[1] : "stdin");
-        std::istream *stream = &std::cin;
-        std::ifstream file;
-        if (argc == 2) {
-            file = std::ifstream{argv[1]};
-            stream = &file;
-        }
+        if (argc == 2)
+            stream = &(file = std::ifstream {argv[1]});
 
         auto accumulators = forEachCharacterCompose(*stream, bytesCount, linesCount, wordsCount);
         auto bytes = accumulators[0], lines = accumulators[1], words = accumulators[2];

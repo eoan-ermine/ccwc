@@ -37,6 +37,39 @@ int main(int argc, char* argv[]) {
         }
 
         std::cout << lines << ' ' << argv[2] << '\n';
+    } else if (argv[1] == "-w"sv) {
+        constexpr auto BUFFER_SIZE = 16*1024+1;
+        std::array<char, BUFFER_SIZE> buffer;
+        std::ifstream file{argv[2]};
+
+        uintmax_t words = 0;
+        while (size_t nBytes = (file.read(buffer.data(), BUFFER_SIZE), file.gcount())) {
+            if (nBytes == 0) break;
+
+            buffer[nBytes] = ' ';
+            bool isSpace = false;
+            for (auto it = buffer.data(), endIt = it + nBytes + 1; it != endIt; ++it) {
+                switch (*it) {
+                    case '\r':
+                    case '\n':
+                    case '\t':
+                    case '\f':
+                    case '\v':
+                    case ' ': {
+                        if (!isSpace) {
+                            ++words;
+                        }
+                        isSpace = true;
+                        break;
+                    }
+                    default: {
+                        isSpace = false;
+                    }
+                }
+            }
+        }
+
+        std::cout << words << ' ' << argv[2] << '\n';
     }
 
     return 0;

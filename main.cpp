@@ -4,29 +4,14 @@
 #include <array>
 #include <cstring>
 #include <cstdint>
-#include <vector>
 
 using namespace std::literals;
 
-constexpr auto forEachCharacter = [](std::istream &stream, auto F) {
-    constexpr auto BUFFER_SIZE = 16*1024;
-    std::array<char, BUFFER_SIZE> buffer;
-
-    uintmax_t accumulator = 0;
-    while (size_t nBytes = (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
-        if (nBytes == 0) break;
-        F(accumulator, buffer, nBytes);
-    }
-
-    return accumulator;
-};
-
-constexpr auto forEachCharacterCompose = []<typename... F>(std::istream &stream, F... fun) {
+constexpr auto forEachCharacter = []<typename... F>(std::istream &stream, F... fun) {
     return []<auto... Idx>(std::istream &stream, std::index_sequence<Idx...>, F... fun) {
         constexpr auto BUFFER_SIZE = 16*1024;
         std::array<char, BUFFER_SIZE> buffer;
-
-        std::vector<uintmax_t> accumulators(sizeof...(F));
+        std::array<uintmax_t, sizeof...(F)> accumulators;
         while (size_t nBytes = (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
             if (nBytes == 0) break;
             (fun(accumulators[Idx], buffer, nBytes), ...);
@@ -39,10 +24,12 @@ constexpr auto forEachCharacterCompose = []<typename... F>(std::istream &stream,
 constexpr auto bytesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
     accumulator += nBytes;
 };
+
 constexpr auto linesCount = [](auto &accumulator, auto &buffer, auto nBytes) {
     for(char *p = buffer.data(); (p = (char*) memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
         ++accumulator;
 };
+
 constexpr auto wordsCount = [](auto &accumulator, auto &buffer, auto nBytes) {
     bool isSpace = false;
     for (auto it = buffer.data(), endIt = it + nBytes; it != endIt; ++it) {
@@ -53,9 +40,8 @@ constexpr auto wordsCount = [](auto &accumulator, auto &buffer, auto nBytes) {
             case '\f':
             case '\v':
             case ' ': {
-                if (!isSpace) {
+                if (!isSpace)
                     ++accumulator;
-                }
                 isSpace = true;
                 break;
             }
@@ -65,6 +51,7 @@ constexpr auto wordsCount = [](auto &accumulator, auto &buffer, auto nBytes) {
         }
     }
 };
+
 constexpr auto multibyteCount = [](auto &accumulator, auto &buffer, auto nBytes) {
     for (auto it = buffer.data(), endIt = it + nBytes; it != endIt; ++accumulator) {
         const int next = std::mblen(it, endIt - it);
@@ -85,19 +72,19 @@ int main(int argc, char* argv[]) {
 
         uintmax_t accumulator = 0;
         if (argv[1] == "-c"sv) {
-            accumulator = forEachCharacter(*stream, bytesCount);
+            accumulator = forEachCharacter(*stream, bytesCount)[0];
         } else if (argv[1] == "-l"sv) {
-            accumulator = forEachCharacter(*stream, linesCount);
+            accumulator = forEachCharacter(*stream, linesCount)[0];
         } else if (argv[1] == "-w"sv) {
-            accumulator = forEachCharacter(*stream, wordsCount);
+            accumulator = forEachCharacter(*stream, wordsCount)[0];
         } else if (argv[1] == "-m"sv) {
             std::setlocale(LC_ALL, "");
             std::mblen(nullptr, 0); // reset the conversion state
 
             if (MB_CUR_MAX > 1)
-                accumulator = forEachCharacter(*stream, multibyteCount);
+                accumulator = forEachCharacter(*stream, multibyteCount)[0];
             else
-                accumulator = forEachCharacter(*stream, bytesCount);
+                accumulator = forEachCharacter(*stream, bytesCount)[0];
         }
 
         if (filename == "stdin"sv) {
@@ -110,9 +97,7 @@ int main(int argc, char* argv[]) {
         if (argc == 2)
             stream = &(file = std::ifstream {argv[1]});
 
-        auto accumulators = forEachCharacterCompose(*stream, bytesCount, linesCount, wordsCount);
-        auto bytes = accumulators[0], lines = accumulators[1], words = accumulators[2];
-
+        auto [bytes, lines, words] = forEachCharacter(*stream, bytesCount, linesCount, wordsCount);
         if (filename == "stdin"sv) {
             std::cout << lines << ' ' << words << ' ' << bytes << '\n';
         } else {

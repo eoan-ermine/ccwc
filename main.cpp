@@ -37,9 +37,8 @@ int main(int argc, char* argv[]) {
             ++accumulator;
     };
     auto wordsCount = [](auto &accumulator, auto &buffer, auto nBytes) {
-        buffer[nBytes] = ' ';
         bool isSpace = false;
-        for (auto it = buffer.data(), endIt = it + nBytes + 1; it != endIt; ++it) {
+        for (auto it = buffer.data(), endIt = it + nBytes; it != endIt; ++it) {
             switch (*it) {
                 case '\r':
                 case '\n':

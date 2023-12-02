@@ -16,7 +16,6 @@ constexpr auto forEachCharacter = []<typename... F>(std::istream &stream, F... f
             if (nBytes == 0) break;
             (fun(accumulators[Idx], buffer, nBytes), ...);
         }
-
         return accumulators;
     }(stream, std::make_index_sequence<sizeof...(F)>(), fun...);
 };
@@ -66,7 +65,7 @@ int main(int argc, char *argv[]) {
     std::ifstream file;
 
     if ((argc == 2 && argv[1][0] == '-') || argc == 3) {
-        const char *filename = (argc == 3 ? argv[2] : "stdin");
+        const char *path = (argc == 3 ? argv[2] : nullptr);
         if (argc == 3)
             stream = &(file = std::ifstream{argv[2]});
 
@@ -87,22 +86,14 @@ int main(int argc, char *argv[]) {
                 accumulator = forEachCharacter(*stream, bytesCount)[0];
         }
 
-        if (filename == "stdin"sv) {
-            std::cout << accumulator << '\n';
-        } else {
-            std::cout << accumulator << ' ' << filename << '\n';
-        }
+        std::cout << accumulator << ' ' << path << (path ? " " : "") << (path ? path : "") << '\n';
     } else if (argc <= 2) {
-        const char *filename = (argc == 2 ? argv[1] : "stdin");
+        const char *path = (argc == 2 ? argv[1] : nullptr);
         if (argc == 2)
             stream = &(file = std::ifstream{argv[1]});
 
         auto [bytes, lines, words] = forEachCharacter(*stream, bytesCount, linesCount, wordsCount);
-        if (filename == "stdin"sv) {
-            std::cout << lines << ' ' << words << ' ' << bytes << '\n';
-        } else {
-            std::cout << lines << ' ' << words << ' ' << bytes << ' ' << filename << '\n';
-        }
+        std::cout << lines << ' ' << words << ' ' << bytes << (path ? " " : "") << (path ? path : "") << '\n';
     }
 
     return 0;

@@ -31,14 +31,17 @@ int main(int argc, char *argv[]) {
                 accumulator = forEachCharacter(*stream, bytesCount)[0];
         }
 
-        std::cout << accumulator << ' ' << path << (path ? " " : "") << (path ? path : "") << '\n';
+        std::cout << accumulator << ' ' << path << (path ? " " : "")
+                  << (path ? path : "") << '\n';
     } else if (argc <= 2) {
         const char *path = (argc == 2 ? argv[1] : nullptr);
         if (argc == 2)
             stream = &(file = std::ifstream{argv[1]});
 
-        auto [bytes, lines, words] = forEachCharacter(*stream, bytesCount, linesCount, wordsCount);
-        std::cout << lines << ' ' << words << ' ' << bytes << (path ? " " : "") << (path ? path : "") << '\n';
+        auto [bytes, lines, words] =
+            forEachCharacter(*stream, bytesCount, linesCount, wordsCount);
+        std::cout << lines << ' ' << words << ' ' << bytes << (path ? " " : "")
+                  << (path ? path : "") << '\n';
     }
 
     return 0;

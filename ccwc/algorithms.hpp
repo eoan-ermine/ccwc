@@ -23,9 +23,10 @@ constexpr auto forEachCharacter(std::istream &stream, F... fun) {
         }
         return accumulators;
     }(stream, std::make_index_sequence<sizeof...(F)>(), fun...);
-};
+}
 
-constexpr auto bytesCount(AccumulatorType &accumulator, BufferType &buffer,
+constexpr auto bytesCount(AccumulatorType &accumulator,
+                          [[maybe_unused]] BufferType &_,
                           size_t nBytes) {
     accumulator += nBytes;
 }
@@ -35,7 +36,7 @@ constexpr auto linesCount(AccumulatorType &accumulator, BufferType &buffer,
     for (char *p = buffer.data();
          (p = (char *)memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
         ++accumulator;
-};
+}
 
 constexpr auto wordsCount(AccumulatorType &accumulator, BufferType &buffer,
                           size_t nBytes) {
@@ -58,7 +59,7 @@ constexpr auto wordsCount(AccumulatorType &accumulator, BufferType &buffer,
         }
         }
     }
-};
+}
 
 constexpr auto multibyteCount(AccumulatorType &accumulator, BufferType &buffer,
                               size_t nBytes) {
@@ -69,4 +70,4 @@ constexpr auto multibyteCount(AccumulatorType &accumulator, BufferType &buffer,
             throw std::runtime_error("strlen_mb(): conversion error");
         it += next;
     }
-};
+}

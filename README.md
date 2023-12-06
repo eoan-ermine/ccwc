@@ -1,3 +1,21 @@
+# ccwc
+
+## Building ccwc with CMake
+
+```shell
+cmake -S . -B build
+cmake --build build
+cmake --build build -t test
+```
+
+## CCWC CMake variables
+
+* **CCWC_TEST**:BOOL<br/>
+Include ccwc tests in the `all` build target. Defaults to ON.
+
+* **CCWC_CCACHE_BUILD**:BOOL<br/>
+If enabled and the ccache program is available, then CCWC will be built using ccache to speed up rebuilds of CCWC and its components. Defaults to ON.
+
 # Write Your Own wc Tool
 
 This challenge is to build your own version of the Unix command line tool wc!

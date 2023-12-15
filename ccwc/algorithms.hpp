@@ -11,8 +11,7 @@ using BufferType = std::array<char, BUFFER_SIZE>;
 
 template <typename... F>
 constexpr auto forEachCharacter(std::istream &stream, F... fun) {
-    return []<auto... Idx>(std::istream &stream, std::index_sequence<Idx...>,
-                           F... fun) {
+    return [&]<auto... Idx>(std::index_sequence<Idx...>) {
         BufferType buffer;
         std::array<AccumulatorType, sizeof...(F)> accumulators;
         while (size_t nBytes =
@@ -22,7 +21,7 @@ constexpr auto forEachCharacter(std::istream &stream, F... fun) {
             (fun(accumulators[Idx], buffer, nBytes), ...);
         }
         return accumulators;
-    }(stream, std::make_index_sequence<sizeof...(F)>(), fun...);
+    }(std::make_index_sequence<sizeof...(F)>());
 }
 
 constexpr auto bytesCount(AccumulatorType &accumulator,

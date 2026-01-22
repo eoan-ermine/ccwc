@@ -11,4 +11,4 @@ FetchContent_MakeAvailable(Catch2)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/sample/test.txt ${CMAKE_CURRENT_BINARY_DIR}/test.txt COPYONLY)
 
 add_executable(sample sample/main.cpp)
-target_link_libraries(sample PRIVATE Catch2::Catch2WithMain)
+target_link_libraries(sample PRIVATE Catch2::Catch2WithMain libcount libccwc)

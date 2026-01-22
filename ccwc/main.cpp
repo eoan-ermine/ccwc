@@ -3,13 +3,17 @@
 
 #include <boost/program_options.hpp>
 
-#include "countFunctions.hpp"
+#include "libccwc/for_each_character.hpp"
+#include "libcount/count.hpp"
 
 using namespace std::literals;
+using namespace eoanermine::ccwc;
+using namespace eoanermine;
 
 template <typename F>
 static std::string handleArgument(std::istream *&stream, const F &function) {
-    std::string result = std::to_string(forEachCharacter(*stream, function)[0]);
+    std::string result =
+        std::to_string(forEachCharacter<BufferType>(*stream, function)[0]);
     result += " ";
     stream->clear();
     stream->seekg(0);
@@ -22,7 +26,8 @@ static void resetMultibyteState() {
 }
 
 static auto getMultibyteCountFunction() {
-    return MB_CUR_MAX > 1 ? multibyteCount : bytesCount;
+    return MB_CUR_MAX > 1 ? count::characters<BufferType>
+                          : count::bytes<BufferType>;
 }
 
 int main(int argc, char *argv[]) {
@@ -66,11 +71,11 @@ int main(int argc, char *argv[]) {
         std::string result_string;
 
         if (vm.count("lines")) {
-            result_string += handleArgument(stream, linesCount);
+            result_string += handleArgument(stream, count::lines<BufferType>);
         }
 
         if (vm.count("words")) {
-            result_string += handleArgument(stream, wordsCount);
+            result_string += handleArgument(stream, count::words<BufferType>);
         }
 
         if (vm.count("chars")) {
@@ -80,15 +85,15 @@ int main(int argc, char *argv[]) {
         }
 
         if (vm.count("bytes")) {
-            result_string += handleArgument(stream, bytesCount);
+            result_string += handleArgument(stream, count::bytes<BufferType>);
         }
 
         std::cout << result_string << ' ' << input_file << '\n';
     } else if (argc <= 2) {
         resetMultibyteState();
-        auto [lines, words, chars, bytes] =
-            forEachCharacter(*stream, linesCount, wordsCount,
-                             getMultibyteCountFunction(), bytesCount);
+        auto [lines, words, chars, bytes] = forEachCharacter<BufferType>(
+            *stream, count::lines<BufferType>, count::words<BufferType>,
+            getMultibyteCountFunction(), count::bytes<BufferType>);
         std::cout << lines << ' ' << words << ' ' << bytes
                   << (input_file.size() ? " " : "") << input_file << '\n';
     }

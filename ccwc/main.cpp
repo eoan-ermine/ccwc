@@ -65,34 +65,27 @@ int main(int argc, char *argv[]) {
         
         // Collect all required count functions
         std::vector<std::function<size_t(const BufferType&, size_t)>> functions;
-        std::vector<std::string> labels;
         
         if (vm.count("lines")) {
             functions.push_back(count::lines<BufferType>);
-            labels.push_back("lines");
         }
         
         if (vm.count("words")) {
             functions.push_back(count::words<BufferType>);
-            labels.push_back("words");
         }
         
         if (vm.count("chars")) {
             functions.push_back(getMultibyteCountFunction());
-            labels.push_back("chars");
         }
         
         if (vm.count("bytes")) {
             functions.push_back(count::bytes<BufferType>);
-            labels.push_back("bytes");
         }
         
         // Read stream once and compute all counts
         BufferType buffer;
         std::vector<size_t> results(functions.size(), 0);
         while (size_t nBytes = (stream->read(buffer.data(), BUFFER_SIZE), stream->gcount())) {
-            if (nBytes == 0)
-                break;
             for (size_t i = 0; i < functions.size(); ++i) {
                 results[i] += functions[i](buffer, nBytes);
             }

@@ -1,5 +1,8 @@
+#include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
+#include <vector>
 
 #include <boost/program_options.hpp>
 
@@ -9,16 +12,6 @@
 using namespace std::literals;
 using namespace eoanermine::ccwc;
 using namespace eoanermine;
-
-template <typename F>
-static std::string handleArgument(std::istream *&stream, const F &function) {
-    std::string result =
-        std::to_string(forEachCharacter<BufferType>(*stream, function)[0]);
-    result += " ";
-    stream->clear();
-    stream->seekg(0);
-    return result;
-}
 
 static void resetMultibyteState() {
     std::setlocale(LC_ALL, "");
@@ -67,28 +60,52 @@ int main(int argc, char *argv[]) {
         stream = &file;
     }
 
-    if ((argc == 2 && argv[1][0] == '-') || argc >= 3) {
-        std::string result_string;
-
+    if ((argc == 2 && std::strlen(argv[1]) > 0 && argv[1][0] == '-') || argc >= 3) {
+        resetMultibyteState();
+        
+        // Collect all required count functions
+        std::vector<std::function<size_t(const BufferType&, size_t)>> functions;
+        std::vector<std::string> labels;
+        
         if (vm.count("lines")) {
-            result_string += handleArgument(stream, count::lines<BufferType>);
+            functions.push_back(count::lines<BufferType>);
+            labels.push_back("lines");
         }
-
+        
         if (vm.count("words")) {
-            result_string += handleArgument(stream, count::words<BufferType>);
+            functions.push_back(count::words<BufferType>);
+            labels.push_back("words");
         }
-
+        
         if (vm.count("chars")) {
-            resetMultibyteState();
-            result_string +=
-                handleArgument(stream, getMultibyteCountFunction());
+            functions.push_back(getMultibyteCountFunction());
+            labels.push_back("chars");
         }
-
+        
         if (vm.count("bytes")) {
-            result_string += handleArgument(stream, count::bytes<BufferType>);
+            functions.push_back(count::bytes<BufferType>);
+            labels.push_back("bytes");
         }
-
-        std::cout << result_string << ' ' << input_file << '\n';
+        
+        // Read stream once and compute all counts
+        BufferType buffer;
+        std::vector<size_t> results(functions.size(), 0);
+        while (size_t nBytes = (stream->read(buffer.data(), BUFFER_SIZE), stream->gcount())) {
+            if (nBytes == 0)
+                break;
+            for (size_t i = 0; i < functions.size(); ++i) {
+                results[i] += functions[i](buffer, nBytes);
+            }
+        }
+        
+        // Output results
+        for (size_t result : results) {
+            std::cout << result << ' ';
+        }
+        if (input_file.size()) {
+            std::cout << input_file;
+        }
+        std::cout << '\n';
     } else if (argc <= 2) {
         resetMultibyteState();
         auto [lines, words, chars, bytes] = forEachCharacter<BufferType>(

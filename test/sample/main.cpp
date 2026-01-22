@@ -19,13 +19,13 @@ TEST_CASE("test.txt", "[ccwc]") {
         std::setlocale(LC_ALL, "");
         std::mblen(nullptr, 0); // reset the conversion state
 
-        auto [bytes, lines, words, multibytes] = forEachCharacter<BufferType>(
-            *stream, count::bytes<BufferType>, count::lines<BufferType>,
-            count::words<BufferType>, count::characters<BufferType>);
+        auto results = forEachCharacter<BufferType>(
+            *stream, {count::bytes<BufferType>, count::lines<BufferType>,
+                      count::words<BufferType>, count::characters<BufferType>});
 
-        REQUIRE(bytes == 342190);
-        REQUIRE(lines == 7145);
-        REQUIRE(words == 58164);
-        REQUIRE(multibytes == 339292);
+        REQUIRE(results[0] == 342190);
+        REQUIRE(results[1] == 7145);
+        REQUIRE(results[2] == 58164);
+        REQUIRE(results[3] == 339292);
     }
 }

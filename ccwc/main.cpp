@@ -10,16 +10,6 @@ using namespace std::literals;
 using namespace eoanermine::ccwc;
 using namespace eoanermine;
 
-template <typename F>
-static std::string handleArgument(std::istream *&stream, const F &function) {
-    std::string result =
-        std::to_string(forEachCharacter<BufferType>(*stream, function)[0]);
-    result += " ";
-    stream->clear();
-    stream->seekg(0);
-    return result;
-}
-
 static void resetMultibyteState() {
     std::setlocale(LC_ALL, "");
     std::mblen(nullptr, 0);
@@ -67,36 +57,34 @@ int main(int argc, char *argv[]) {
         stream = &file;
     }
 
-    if ((argc == 2 && argv[1][0] == '-') || argc >= 3) {
-        std::string result_string;
+    std::vector<std::function<size_t(const BufferType &, size_t)>> functions;
 
+    if ((argc == 2 && std::strlen(argv[1]) > 0 && argv[1][0] == '-') ||
+        argc >= 3) {
         if (vm.count("lines")) {
-            result_string += handleArgument(stream, count::lines<BufferType>);
+            functions.push_back(count::lines<BufferType>);
         }
-
         if (vm.count("words")) {
-            result_string += handleArgument(stream, count::words<BufferType>);
+            functions.push_back(count::words<BufferType>);
         }
-
         if (vm.count("chars")) {
             resetMultibyteState();
-            result_string +=
-                handleArgument(stream, getMultibyteCountFunction());
+            functions.push_back(getMultibyteCountFunction());
         }
-
         if (vm.count("bytes")) {
-            result_string += handleArgument(stream, count::bytes<BufferType>);
+            functions.push_back(count::bytes<BufferType>);
         }
-
-        std::cout << result_string << ' ' << input_file << '\n';
     } else if (argc <= 2) {
         resetMultibyteState();
-        auto [lines, words, chars, bytes] = forEachCharacter<BufferType>(
-            *stream, count::lines<BufferType>, count::words<BufferType>,
-            getMultibyteCountFunction(), count::bytes<BufferType>);
-        std::cout << lines << ' ' << words << ' ' << bytes
-                  << (input_file.size() ? " " : "") << input_file << '\n';
+        functions = {count::lines<BufferType>, count::words<BufferType>,
+                     getMultibyteCountFunction(), count::bytes<BufferType>};
     }
+
+    auto results = forEachCharacter<BufferType>(*stream, functions);
+    for (const auto &result : results) {
+        std::cout << result << ' ';
+    }
+    std::cout << input_file << '\n';
 
     return 0;
 }

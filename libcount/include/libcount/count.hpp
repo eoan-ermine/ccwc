@@ -1,5 +1,6 @@
 #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 #include <stdexcept>
 
 namespace eoanermine {
@@ -15,7 +16,9 @@ template <typename BufferType>
 constexpr size_t lines(const BufferType &buffer, size_t nBytes) {
     size_t linesCount{0};
     for (const char *p = buffer.data();
-         (p = (char *)memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
+         (p = static_cast<const char *>(
+              memchr(p, '\n', (buffer.data() + nBytes) - p)));
+         ++p)
         ++linesCount;
     return linesCount;
 }
@@ -53,6 +56,8 @@ constexpr size_t characters(const BufferType &buffer, size_t nBytes) {
         const int next = std::mblen(it, endIt - it);
         if (next == -1)
             throw std::runtime_error("strlen_mb(): conversion error");
+        if (next == 0)
+            break;
         it += next;
     }
     return multibyteCount;

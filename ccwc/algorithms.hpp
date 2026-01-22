@@ -18,27 +18,29 @@ constexpr auto forEachCharacter(std::istream &stream, F... fun) {
                    (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
             if (nBytes == 0)
                 break;
-            (fun(accumulators[Idx], buffer, nBytes), ...);
+            ((accumulators[Idx] += fun(buffer, nBytes)), ...);
         }
         return accumulators;
     }(std::make_index_sequence<sizeof...(F)>());
 }
 
-constexpr auto bytesCount(AccumulatorType &accumulator,
-                          [[maybe_unused]] BufferType &_,
+constexpr auto bytesCount([[maybe_unused]] BufferType &_,
                           size_t nBytes) {
-    accumulator += nBytes;
+    return nBytes;
 }
 
-constexpr auto linesCount(AccumulatorType &accumulator, BufferType &buffer,
+constexpr auto linesCount(BufferType &buffer,
                           size_t nBytes) {
+    AccumulatorType linesCount{0};
     for (char *p = buffer.data();
          (p = (char *)memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
-        ++accumulator;
+        ++linesCount;
+    return linesCount;
 }
 
-constexpr auto wordsCount(AccumulatorType &accumulator, BufferType &buffer,
+constexpr auto wordsCount(BufferType &buffer,
                           size_t nBytes) {
+    AccumulatorType wordsCount{0};
     bool isSpace = false;
     for (auto it = buffer.data(), endIt = it + nBytes; it != endIt; ++it) {
         switch (*it) {
@@ -49,7 +51,7 @@ constexpr auto wordsCount(AccumulatorType &accumulator, BufferType &buffer,
         case '\v':
         case ' ': {
             if (!isSpace)
-                ++accumulator;
+                ++wordsCount;
             isSpace = true;
             break;
         }
@@ -58,15 +60,18 @@ constexpr auto wordsCount(AccumulatorType &accumulator, BufferType &buffer,
         }
         }
     }
+    return wordsCount;
 }
 
-constexpr auto multibyteCount(AccumulatorType &accumulator, BufferType &buffer,
+constexpr auto multibyteCount(BufferType &buffer,
                               size_t nBytes) {
+    AccumulatorType multibyteCount{0};
     for (auto it = buffer.data(), endIt = it + nBytes; it != endIt;
-         ++accumulator) {
+         ++multibyteCount) {
         const int next = std::mblen(it, endIt - it);
         if (next == -1)
             throw std::runtime_error("strlen_mb(): conversion error");
         it += next;
     }
+    return multibyteCount;
 }

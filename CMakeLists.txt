@@ -14,6 +14,7 @@ if (NOT DEFINED CCWC_MASTER_PROJECT)
 endif ()
 
 set(CMAKE_CXX_STANDARD 23)
+find_package(Boost COMPONENTS program_options REQUIRED)
 
 option(CCWC_CCACHE_BUILD "Use ccache" ${CCWC_MASTER_PROJECT})
 
@@ -29,3 +30,4 @@ if (CCWC_TEST)
 endif ()
 
 add_executable(${PROJECT_NAME} ccwc/main.cpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE Boost::program_options)

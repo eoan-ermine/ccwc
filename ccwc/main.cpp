@@ -1,46 +1,100 @@
+#include <boost/program_options/options_description.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <boost/program_options/positional_options.hpp>
+#include <boost/program_options/variables_map.hpp>
 #include <fstream>
 #include <iostream>
+
+#include <boost/program_options.hpp>
 
 #include "algorithms.hpp"
 
 using namespace std::literals;
 
+template <typename F>
+static std::string handleArgument(std::istream *&stream, const F &function) {
+    std::string result = std::to_string(forEachCharacter(*stream, function)[0]);
+    result += " ";
+    stream->clear();
+    stream->seekg(0);
+    return result;
+}
+
+static void resetMultibyteState() {
+    std::setlocale(LC_ALL, "");
+    std::mblen(nullptr, 0);
+}
+
+static auto getMultibyteCountFunction() {
+    return MB_CUR_MAX > 1 ? multibyteCount : bytesCount;
+}
+
 int main(int argc, char *argv[]) {
+    namespace po = boost::program_options;
+
+    std::string input_file{};
+    po::options_description desc{"Options"};
+    desc.add_options()("help,h", "produce help message")(
+        "bytes,c", "print count of bytes")("chars,m", "print count of symbols")(
+        "lines,l", "print count of lines")("words,w", "print count of words")(
+        "input-file", po::value<std::string>(&input_file));
+
+    po::positional_options_description pos_desc;
+    pos_desc.add("input-file", -1);
+
+    po::variables_map vm;
+    po::store(po::command_line_parser(argc, argv)
+                  .options(desc)
+                  .positional(pos_desc)
+                  .run(),
+              vm);
+    po::notify(vm);
+
+    if (vm.count("help")) {
+        std::cout << desc << "\n";
+        return 0;
+    }
+
     std::istream *stream = &std::cin;
     std::ifstream file;
+    if (input_file.size()) {
+        file = std::ifstream{input_file};
+        if (!file) {
+            std::cerr << "Cannot open input file: " << input_file << "\n";
+            return 1;
+        }
+        stream = &file;
+    }
 
-    if ((argc == 2 && argv[1][0] == '-') || argc == 3) {
-        const char *path = (argc == 3 ? argv[2] : nullptr);
-        if (argc == 3)
-            stream = &(file = std::ifstream{argv[2]});
+    if ((argc == 2 && argv[1][0] == '-') || argc >= 3) {
+        std::string result_string;
 
-        uintmax_t accumulator = 0;
-        if (argv[1] == "-c"sv) {
-            accumulator = forEachCharacter(*stream, bytesCount)[0];
-        } else if (argv[1] == "-l"sv) {
-            accumulator = forEachCharacter(*stream, linesCount)[0];
-        } else if (argv[1] == "-w"sv) {
-            accumulator = forEachCharacter(*stream, wordsCount)[0];
-        } else if (argv[1] == "-m"sv) {
-            std::setlocale(LC_ALL, "");
-            std::mblen(nullptr, 0); // reset the conversion state
-
-            if (MB_CUR_MAX > 1)
-                accumulator = forEachCharacter(*stream, multibyteCount)[0];
-            else
-                accumulator = forEachCharacter(*stream, bytesCount)[0];
+        if (vm.count("lines")) {
+            result_string += handleArgument(stream, linesCount);
         }
 
-        std::cout << accumulator << ' ' << path << '\n';
-    } else if (argc <= 2) {
-        const char *path = (argc == 2 ? argv[1] : nullptr);
-        if (argc == 2)
-            stream = &(file = std::ifstream{argv[1]});
+        if (vm.count("words")) {
+            result_string += handleArgument(stream, wordsCount);
+        }
 
-        auto [bytes, lines, words] =
-            forEachCharacter(*stream, bytesCount, linesCount, wordsCount);
-        std::cout << lines << ' ' << words << ' ' << bytes << (path ? " " : "")
-                  << (path ? path : "") << '\n';
+        if (vm.count("chars")) {
+            resetMultibyteState();
+            result_string +=
+                handleArgument(stream, getMultibyteCountFunction());
+        }
+
+        if (vm.count("bytes")) {
+            result_string += handleArgument(stream, bytesCount);
+        }
+
+        std::cout << result_string << ' ' << input_file << '\n';
+    } else if (argc <= 2) {
+        resetMultibyteState();
+        auto [lines, words, chars, bytes] =
+            forEachCharacter(*stream, linesCount, wordsCount,
+                             getMultibyteCountFunction(), bytesCount);
+        std::cout << lines << ' ' << words << ' ' << bytes
+                  << (input_file.size() ? " " : "") << input_file << '\n';
     }
 
     return 0;

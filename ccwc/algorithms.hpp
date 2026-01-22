@@ -13,7 +13,7 @@ template <typename... F>
 constexpr auto forEachCharacter(std::istream &stream, F... fun) {
     return [&]<auto... Idx>(std::index_sequence<Idx...>) {
         BufferType buffer;
-        std::array<AccumulatorType, sizeof...(F)> accumulators;
+        std::array<AccumulatorType, sizeof...(F)> accumulators = {};
         while (size_t nBytes =
                    (stream.read(buffer.data(), BUFFER_SIZE), stream.gcount())) {
             if (nBytes == 0)
@@ -24,13 +24,11 @@ constexpr auto forEachCharacter(std::istream &stream, F... fun) {
     }(std::make_index_sequence<sizeof...(F)>());
 }
 
-constexpr auto bytesCount([[maybe_unused]] BufferType &_,
-                          size_t nBytes) {
+constexpr auto bytesCount([[maybe_unused]] BufferType &_, size_t nBytes) {
     return nBytes;
 }
 
-constexpr auto linesCount(BufferType &buffer,
-                          size_t nBytes) {
+constexpr auto linesCount(BufferType &buffer, size_t nBytes) {
     AccumulatorType linesCount{0};
     for (char *p = buffer.data();
          (p = (char *)memchr(p, '\n', (buffer.data() + nBytes) - p)); ++p)
@@ -38,8 +36,7 @@ constexpr auto linesCount(BufferType &buffer,
     return linesCount;
 }
 
-constexpr auto wordsCount(BufferType &buffer,
-                          size_t nBytes) {
+constexpr auto wordsCount(BufferType &buffer, size_t nBytes) {
     AccumulatorType wordsCount{0};
     bool isSpace = false;
     for (auto it = buffer.data(), endIt = it + nBytes; it != endIt; ++it) {
@@ -63,8 +60,7 @@ constexpr auto wordsCount(BufferType &buffer,
     return wordsCount;
 }
 
-constexpr auto multibyteCount(BufferType &buffer,
-                              size_t nBytes) {
+constexpr auto multibyteCount(BufferType &buffer, size_t nBytes) {
     AccumulatorType multibyteCount{0};
     for (auto it = buffer.data(), endIt = it + nBytes; it != endIt;
          ++multibyteCount) {

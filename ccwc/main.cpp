@@ -1,13 +1,9 @@
-#include <boost/program_options/options_description.hpp>
-#include <boost/program_options/parsers.hpp>
-#include <boost/program_options/positional_options.hpp>
-#include <boost/program_options/variables_map.hpp>
 #include <fstream>
 #include <iostream>
 
 #include <boost/program_options.hpp>
 
-#include "algorithms.hpp"
+#include "countFunctions.hpp"
 
 using namespace std::literals;
 

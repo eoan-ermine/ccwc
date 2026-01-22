@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
-#include "../../ccwc/algorithms.hpp"
+#include "../../ccwc/countFunctions.hpp"
 
 TEST_CASE("test.txt", "[ccwc]") {
     {

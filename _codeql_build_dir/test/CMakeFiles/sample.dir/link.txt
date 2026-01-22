@@ -1,0 +1,1 @@
+/home/runner/work/ccwc/.codeql-scratch/dbs/cpp/working/autobuild/bin/c++ -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/sample.dir/link.d CMakeFiles/sample.dir/sample/main.cpp.o -o sample  ../_deps/catch2-build/src/libCatch2Main.a ../_deps/catch2-build/src/libCatch2.a

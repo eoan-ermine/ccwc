@@ -1,0 +1,5 @@
+if(EXISTS "/home/runner/work/ccwc/ccwc/_codeql_build_dir/test/sample_tests-b12d07c.cmake")
+  include("/home/runner/work/ccwc/ccwc/_codeql_build_dir/test/sample_tests-b12d07c.cmake")
+else()
+  add_test(sample_NOT_BUILT-b12d07c sample_NOT_BUILT-b12d07c)
+endif()

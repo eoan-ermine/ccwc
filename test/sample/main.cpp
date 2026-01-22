@@ -1,12 +1,15 @@
 #include <catch2/catch_test_macros.hpp>
 
+#include <filesystem>
 #include <fstream>
 
 #include "../../ccwc/algorithms.hpp"
 
 TEST_CASE("test.txt", "[ccwc]") {
     {
-        std::ifstream file{"test.txt"};
+        std::ifstream file{
+            std::filesystem::canonical("/proc/self/exe").parent_path() /
+            "test.txt"};
         std::istream *stream = &file;
 
         std::setlocale(LC_ALL, "");

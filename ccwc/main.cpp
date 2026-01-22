@@ -3,7 +3,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "libccwc/for_each_character.hpp"
+#include "libccwc/run_count_functions.hpp"
 #include "libcount/count.hpp"
 
 using namespace std::literals;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
                      getMultibyteCountFunction(), count::bytes<BufferType>};
     }
 
-    auto results = forEachCharacter<BufferType>(*stream, functions);
+    auto results = runCountFunctions<BufferType>(*stream, functions);
     for (const auto &result : results) {
         std::cout << result << ' ';
     }

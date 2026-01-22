@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <fstream>
 
-#include "libccwc/for_each_character.hpp"
+#include "libccwc/run_count_functions.hpp"
 #include "libcount/count.hpp"
 
 TEST_CASE("test.txt", "[ccwc]") {
@@ -19,7 +19,7 @@ TEST_CASE("test.txt", "[ccwc]") {
         std::setlocale(LC_ALL, "");
         std::mblen(nullptr, 0); // reset the conversion state
 
-        auto results = forEachCharacter<BufferType>(
+        auto results = runCountFunctions<BufferType>(
             *stream, {count::bytes<BufferType>, count::lines<BufferType>,
                       count::words<BufferType>, count::characters<BufferType>});
 

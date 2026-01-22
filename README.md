@@ -5,13 +5,13 @@
 ```shell
 cmake -S . -B build
 cmake --build build
-cmake --build build -t test
+cmake --build build -t check
 ```
 
 ## CCWC CMake variables
 
 * **CCWC_TEST**:BOOL<br/>
-Include ccwc tests in the `all` build target. Defaults to ON.
+If enabled, then CCWC tests will be built. Defaults to ON.
 
 * **CCWC_CCACHE_BUILD**:BOOL<br/>
 If enabled and the ccache program is available, then CCWC will be built using ccache to speed up rebuilds of CCWC and its components. Defaults to ON.

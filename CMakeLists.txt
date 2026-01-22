@@ -34,6 +34,7 @@ option(CCWC_TEST "Generate the test target." ${CCWC_MASTER_PROJECT})
 if (CCWC_TEST)
     add_subdirectory(test)
 endif ()
+add_custom_target(check COMMAND ctest WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 
 add_executable(${PROJECT_NAME} ccwc/main.cpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE Boost::program_options libccwc libcount)

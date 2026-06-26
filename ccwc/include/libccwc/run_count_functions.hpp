@@ -1,8 +1,8 @@
 #include <array>
 #include <cstddef>
+#include <functional>
 #include <istream>
 #include <vector>
-#include <functional>
 
 namespace eoanermine {
 
@@ -12,7 +12,10 @@ constexpr size_t BUFFER_SIZE = 16 * 1024;
 using BufferType = std::array<char, BUFFER_SIZE>;
 
 template <typename BufferType>
-auto runCountFunctions(std::istream &stream, std::vector<std::function<size_t(const BufferType&, size_t)>> functions) {
+auto runCountFunctions(
+    std::istream &stream,
+    const std::vector<std::function<size_t(const BufferType &, size_t)>>
+        &functions) {
     BufferType buffer;
     std::vector<std::size_t> accumulators(functions.size(), 0);
 

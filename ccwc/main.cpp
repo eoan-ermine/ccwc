@@ -7,8 +7,8 @@
 #include "libcount/count.hpp"
 
 using namespace std::literals;
-using namespace eoanermine::ccwc;
 using namespace eoanermine;
+using namespace eoanermine::ccwc;
 
 static void resetMultibyteState() {
     std::setlocale(LC_ALL, "");
@@ -26,8 +26,10 @@ int main(int argc, char *argv[]) {
     std::string input_file{};
     po::options_description desc{"Options"};
     desc.add_options()("help,h", "produce help message")(
-        "bytes,c", "print count of bytes")("chars,m", "print count of symbols")(
-        "lines,l", "print count of lines")("words,w", "print count of words")(
+        "bytes,c", "print the byte counts")("chars,m",
+                                            "print the character counts")(
+        "lines,l", "print the newline counts")("words,w",
+                                               "print the word counts")(
         "input-file", po::value<std::string>(&input_file));
 
     po::positional_options_description pos_desc;
@@ -48,7 +50,7 @@ int main(int argc, char *argv[]) {
 
     std::istream *stream = &std::cin;
     std::ifstream file;
-    if (input_file.size()) {
+    if (input_file.size() && input_file != "-") {
         file = std::ifstream{input_file};
         if (!file) {
             std::cerr << "Cannot open input file: " << input_file << "\n";
@@ -75,9 +77,8 @@ int main(int argc, char *argv[]) {
             functions.push_back(count::bytes<BufferType>);
         }
     } else if (argc <= 2) {
-        resetMultibyteState();
         functions = {count::lines<BufferType>, count::words<BufferType>,
-                     getMultibyteCountFunction(), count::bytes<BufferType>};
+                     count::bytes<BufferType>};
     }
 
     auto results = runCountFunctions<BufferType>(*stream, functions);
